@@ -5,6 +5,7 @@ import { getDatabase } from "firebase/database";
 const firebaseConfig = {
  apiKey: "AIzaSyClffvlLY66cKD6ex6eOygg8uS9rbKvCns",
   authDomain: "liar-1-ebc12.firebaseapp.com",
+  databaseURL: "https://liar-1-ebc12-default-rtdb.europe-west1.firebasedatabase.app",  // ✅ Add this
   projectId: "liar-1-ebc12",
   storageBucket: "liar-1-ebc12.firebasestorage.app",
   messagingSenderId: "853929867266",
