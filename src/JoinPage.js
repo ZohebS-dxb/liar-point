@@ -1,63 +1,65 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { database } from './firebase';
-import { ref, get, push, set } from 'firebase/database';
+import { ref, push, set, get } from 'firebase/database';
 
 export default function JoinPage() {
+  const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [playerName, setPlayerName] = useState('');
   const navigate = useNavigate();
 
   const handleJoin = async () => {
-    if (!roomCode || !playerName) {
-      alert("Enter both room code and name");
-      return;
-    }
+    if (!name || !roomCode) return;
 
-    const roomRef = ref(database, 'rooms/' + roomCode);
+    const roomRef = ref(database, 'rooms/' + roomCode + '/players');
     const snapshot = await get(roomRef);
 
     if (!snapshot.exists()) {
-      alert("Room not found");
+      alert('Room not found');
       return;
     }
 
-    const playersRef = ref(database, 'rooms/' + roomCode + '/players');
-    const newPlayerRef = push(playersRef);
+    const playerRef = push(roomRef);
+    const playerId = playerRef.key;
 
-    await set(newPlayerRef, {
-      name: playerName,
+    await set(playerRef, {
+      name,
       isHost: false
     });
 
-    navigate('/lobby', { state: { roomCode } });
+    navigate('/lobby', {
+      state: {
+        roomCode,
+        playerId
+      }
+    });
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4 text-center">
-      <h2 className="text-3xl font-bold text-[#fef1dd] mb-8">Join a Game</h2>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4">
+      <h1 className="text-3xl font-bold text-[#fef1dd] mb-6">Join Game</h1>
 
       <input
         type="text"
-        className="w-full max-w-md mb-4 px-4 py-3 rounded-xl text-[#b1b5de] text-xl"
+        placeholder="Enter your name"
+        className="mb-4 p-3 rounded-xl w-full max-w-xs text-center"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+
+      <input
+        type="text"
         placeholder="Enter Room Code"
+        className="mb-6 p-3 rounded-xl w-full max-w-xs text-center"
         value={roomCode}
         onChange={(e) => setRoomCode(e.target.value)}
       />
 
-      <input
-        type="text"
-        className="w-full max-w-md mb-4 px-4 py-3 rounded-xl text-[#b1b5de] text-xl"
-        placeholder="Enter Your Name"
-        value={playerName}
-        onChange={(e) => setPlayerName(e.target.value)}
-      />
-
       <button
-        className="w-full max-w-md rounded-2xl bg-[#fef1dd] text-xl font-bold text-[#b1b5de] py-4"
         onClick={handleJoin}
+        className="rounded-2xl bg-[#fef1dd] text-xl font-bold text-[#b1b5de] py-4 px-8"
       >
-        JOIN GAME
+        Join Game
       </button>
     </div>
   );
