@@ -4,6 +4,8 @@ import CreatePage from './CreatePage';
 import JoinPage from './JoinPage';
 import GamePage from './GamePage';
 import QuestionPage from './QuestionPage';
+import RoomLobby from './RoomLobby';
+
 
 
 function App() {
@@ -14,6 +16,7 @@ function App() {
         <Route path="/join" element={<JoinPage />} />
         <Route path="/game" element={<GamePage />} />
         <Route path="/question" element={<QuestionPage />} />
+        <Route path="/lobby" element={<RoomLobby />} />
 
       </Routes>
     </Router>
