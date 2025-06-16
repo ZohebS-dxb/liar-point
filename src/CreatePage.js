@@ -6,11 +6,9 @@ import { ref, set } from 'firebase/database';
 export default function CreatePage() {
   const [roomCode, setRoomCode] = useState('');
   const [playerName, setPlayerName] = useState('');
-  const [showInput, setShowInput] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Generate a random 4-digit room code
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     setRoomCode(code);
   }, []);
@@ -18,7 +16,6 @@ export default function CreatePage() {
   const handleStartGame = () => {
     if (!playerName) return alert('Please enter your name');
 
-    // Write initial room data to Firebase
     set(ref(database, 'rooms/' + roomCode), {
       host: playerName,
       players: {
@@ -30,8 +27,7 @@ export default function CreatePage() {
       state: 'lobby'
     });
 
-    // Navigate to the lobby (optionally pass code)
-    navigate('/lobby');
+    navigate('/lobby', { state: { roomCode } });
   };
 
   return (
@@ -39,15 +35,13 @@ export default function CreatePage() {
       <h2 className="text-3xl font-bold text-[#fef1dd] mb-2">Your Room Code:</h2>
       <div className="text-5xl font-bold text-white mb-8">{roomCode}</div>
 
-      {showInput && (
-        <input
-          type="text"
-          className="w-full max-w-md mb-4 px-4 py-3 rounded-xl text-[#b1b5de] text-xl"
-          placeholder="Enter your name"
-          value={playerName}
-          onChange={(e) => setPlayerName(e.target.value)}
-        />
-      )}
+      <input
+        type="text"
+        className="w-full max-w-md mb-4 px-4 py-3 rounded-xl text-[#b1b5de] text-xl"
+        placeholder="Enter your name"
+        value={playerName}
+        onChange={(e) => setPlayerName(e.target.value)}
+      />
 
       <button
         className="w-full max-w-md rounded-2xl bg-[#fef1dd] text-xl font-bold text-[#b1b5de] py-4"
