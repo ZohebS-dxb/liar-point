@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { database } from './firebase';
-import { ref, onValue, push, set } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 
 export default function RoomLobby() {
   const location = useLocation();
@@ -15,31 +15,31 @@ export default function RoomLobby() {
     if (!roomCode || !playerId) return;
 
     const playersRef = ref(database, 'rooms/' + roomCode + '/players');
+
     const unsubscribe = onValue(playersRef, (snapshot) => {
       const data = snapshot.val() || {};
       const playerList = Object.entries(data).map(([id, info]) => ({
         id,
-        name: info.name
+        name: info.name,
+        isHost: info.isHost || false
       }));
       setPlayers(playerList);
 
       const currentPlayer = playerList.find((p) => p.id === playerId);
-      setIsHost(currentPlayer?.isHost || false);
+      setIsHost(currentPlayer?.isHost === true);
     });
 
     return () => unsubscribe();
   }, [roomCode, playerId]);
 
   const handleNextQuestion = async () => {
-    if (!roomCode) return;
-
     const fakerIndex = Math.floor(Math.random() * players.length);
     const fakerId = players[fakerIndex]?.id;
 
     const sampleQuestion = {
       question: "How many hours do you sleep?",
       fakerPrompt: "How many apps do you use daily?",
-      fakerId: fakerId,
+      fakerId,
       timestamp: Date.now()
     };
 

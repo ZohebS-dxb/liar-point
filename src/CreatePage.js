@@ -1,53 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { database } from './firebase';
-import { ref, set } from 'firebase/database';
+import { ref, set, push } from 'firebase/database';
+
+function generateRoomCode() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
 
 export default function CreatePage() {
-  const [roomCode, setRoomCode] = useState('');
-  const [playerName, setPlayerName] = useState('');
+  const [name, setName] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-    setRoomCode(code);
-  }, []);
+  const handleStartGame = async () => {
+    if (!name.trim()) return;
 
-  const handleStartGame = () => {
-    if (!playerName) return alert('Please enter your name');
+    const roomCode = generateRoomCode();
+    const playerRef = push(ref(database, 'rooms/' + roomCode + '/players'));
+    const playerId = playerRef.key;
 
-    set(ref(database, 'rooms/' + roomCode), {
-      host: playerName,
-      players: {
-        [Date.now()]: {
-          name: playerName,
-          isHost: true
-        }
-      },
-      state: 'lobby'
+    await set(playerRef, {
+      name,
+      isHost: true // ✅ Mark this player as the host
     });
 
-    navigate('/lobby', { state: { roomCode } });
+    navigate('/lobby', { state: { roomCode, playerId } });
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4 text-center">
-      <h2 className="text-3xl font-bold text-[#fef1dd] mb-2">Your Room Code:</h2>
-      <div className="text-5xl font-bold text-white mb-8">{roomCode}</div>
-
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4">
+      <h1 className="text-3xl font-bold text-[#fef1dd] mb-6">Create Game</h1>
       <input
         type="text"
-        className="w-full max-w-md mb-4 px-4 py-3 rounded-xl text-[#b1b5de] text-xl"
         placeholder="Enter your name"
-        value={playerName}
-        onChange={(e) => setPlayerName(e.target.value)}
+        className="mb-6 p-3 rounded-xl w-full max-w-xs text-center"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
       />
-
       <button
-        className="w-full max-w-md rounded-2xl bg-[#fef1dd] text-xl font-bold text-[#b1b5de] py-4"
         onClick={handleStartGame}
+        className="rounded-2xl bg-[#fef1dd] text-xl font-bold text-[#b1b5de] py-4 px-8"
       >
-        START GAME
+        Start Game
       </button>
     </div>
   );
