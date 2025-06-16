@@ -1,53 +1,60 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { database } from './firebase';
+import { ref, set } from 'firebase/database';
 
 export default function CreatePage() {
-  const [name, setName] = useState('');
-  const [joinCode, setJoinCode] = useState('');
+  const [roomCode, setRoomCode] = useState('');
+  const [playerName, setPlayerName] = useState('');
+  const [showInput, setShowInput] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const code = Math.floor(1000 + Math.random() * 9000);
-    setJoinCode(code.toString());
+    // Generate a random 4-digit room code
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    setRoomCode(code);
   }, []);
 
-  const handleStart = () => {
-    if (!name) {
-      alert("Please enter your name");
-      return;
-    }
-    console.log("Host name:", name);
-    console.log("Room code:", joinCode);
-    navigate('/game');
+  const handleStartGame = () => {
+    if (!playerName) return alert('Please enter your name');
+
+    // Write initial room data to Firebase
+    set(ref(database, 'rooms/' + roomCode), {
+      host: playerName,
+      players: {
+        [Date.now()]: {
+          name: playerName,
+          isHost: true
+        }
+      },
+      state: 'lobby'
+    });
+
+    // Navigate to the lobby (optionally pass code)
+    navigate('/lobby');
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4">
-      <h1 className="text-6xl font-bold mb-10 tracking-widest" style={{ fontFamily: 'cursive' }}>
-        <span className="text-orange-500">L</span>
-        <span className="text-green-500">I</span>
-        <span className="text-yellow-400">A</span>
-        <span className="text-pink-500">R</span>
-      </h1>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4 text-center">
+      <h2 className="text-3xl font-bold text-[#fef1dd] mb-2">Your Room Code:</h2>
+      <div className="text-5xl font-bold text-white mb-8">{roomCode}</div>
 
-      <input
-        type="text"
-        placeholder="Enter your name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="mb-6 w-full max-w-md rounded-2xl px-6 py-4 text-lg bg-[#fef1dd] focus:outline-none"
-      />
-
-      <p className="text-3xl font-bold text-[#fef1dd] mb-4">{joinCode}</p>
+      {showInput && (
+        <input
+          type="text"
+          className="w-full max-w-md mb-4 px-4 py-3 rounded-xl text-[#b1b5de] text-xl"
+          placeholder="Enter your name"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+        />
+      )}
 
       <button
         className="w-full max-w-md rounded-2xl bg-[#fef1dd] text-xl font-bold text-[#b1b5de] py-4"
-        onClick={handleStart}
+        onClick={handleStartGame}
       >
-        START
+        START GAME
       </button>
-
-      <a href="/join" className="text-white underline mt-4">Join with a code</a>
     </div>
   );
 }
