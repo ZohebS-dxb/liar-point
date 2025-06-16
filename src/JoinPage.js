@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { database } from './firebase';
-import { ref, get, update } from 'firebase/database';
+import { ref, get, push, set } from 'firebase/database';
 
 export default function JoinPage() {
   const [roomCode, setRoomCode] = useState('');
@@ -22,8 +22,10 @@ export default function JoinPage() {
       return;
     }
 
-    const newPlayerRef = ref(database, 'rooms/' + roomCode + '/players/' + Date.now());
-    await update(newPlayerRef, {
+    const playersRef = ref(database, 'rooms/' + roomCode + '/players');
+    const newPlayerRef = push(playersRef);
+
+    await set(newPlayerRef, {
       name: playerName,
       isHost: false
     });
