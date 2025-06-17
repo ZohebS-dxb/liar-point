@@ -7,7 +7,7 @@ function RoomLobby() {
   const navigate = useNavigate();
   const { roomCode, playerId, name, isHost } = location.state || {};
   const [players, setPlayers] = useState([]);
-  const [phase, setPhase] = useState('lobby'); // default phase
+  const [phase, setPhase] = useState('lobby');
 
   useEffect(() => {
     if (!roomCode || !playerId) return;
@@ -26,10 +26,14 @@ function RoomLobby() {
       const currentPhase = snapshot.val();
       setPhase(currentPhase);
 
-      if (currentPhase === 'question') {
-        if (isHost) {
-          navigate('/selectgame', { state: { roomCode, playerId, name, isHost } });
-        }
+      // host goes to selectgame screen
+      if (currentPhase === 'question' && isHost) {
+        navigate('/selectgame', { state: { roomCode, playerId, name, isHost } });
+      }
+
+      // all players go to question screen when phase becomes "game"
+      if (currentPhase === 'game') {
+        navigate('/question', { state: { roomCode, playerId, name, isHost } });
       }
     });
 
