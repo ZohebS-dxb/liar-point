@@ -15,28 +15,27 @@ function RoomLobby() {
     const playersRef = ref(db, `rooms/${roomCode}/players`);
     const unsubscribe = onValue(playersRef, (snapshot) => {
       const data = snapshot.val();
-      const playerList = data ? Object.values(data) : [];
+      const playerList = data
+        ? Object.entries(data).map(([id, player]) => ({ id, ...player }))
+        : [];
       setPlayers(playerList);
     });
 
-    // Listen to game phase changes
-    const phaseRef = ref(db, `rooms/${roomCode}/phase`);
-    const phaseUnsub = onValue(phaseRef, (snapshot) => {
-      const phase = snapshot.val();
-      if (phase === 'question') {
-        navigate('/question', { state: { roomCode, playerId, name, isHost } });
-      }
-    });
+    return () => unsubscribe();
+  }, [roomCode, playerId]);
 
-    return () => {
-      unsubscribe();
-      phaseUnsub();
-    };
-  }, [roomCode, playerId, name, isHost, navigate]);
-
-  const startGame = () => {
+  const handleStartGame = () => {
     const db = getDatabase();
-    set(ref(db, `rooms/${roomCode}/phase`), 'question');
+
+    // Set initial question index
+    set(ref(db, `rooms/${roomCode}/questionIndex`), 0);
+
+    // Pick a random player to be the faker
+    const playerIds = players.map((p) => p.id);
+    const randomFaker = playerIds[Math.floor(Math.random() * playerIds.length)];
+    set(ref(db, `rooms/${roomCode}/fakerId`), randomFaker);
+
+    navigate('/question', { state: { roomCode, playerId, isHost } });
   };
 
   return (
@@ -50,7 +49,7 @@ function RoomLobby() {
       <p className="text-[#f7ecdc] mb-2">Room Code: <strong>{roomCode}</strong></p>
       {isHost && (
         <button
-          onClick={startGame}
+          onClick={handleStartGame}
           className="mt-4 bg-[#f7ecdc] text-[#b1b5de] font-bold text-lg px-8 py-3 rounded-xl shadow hover:opacity-90 transition"
         >
           Start Game
