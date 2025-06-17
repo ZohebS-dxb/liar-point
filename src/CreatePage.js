@@ -1,47 +1,52 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { database } from './firebase';
-import { ref, set, push } from 'firebase/database';
+import { getDatabase, ref, set } from 'firebase/database';
+import { v4 as uuidv4 } from 'uuid';
 
-function generateRoomCode() {
-  return Math.floor(1000 + Math.random() * 9000).toString();
-}
-
-export default function CreatePage() {
+const CreatePage = () => {
   const [name, setName] = useState('');
   const navigate = useNavigate();
 
-  const handleStartGame = async () => {
+  const handleCreateRoom = () => {
     if (!name.trim()) return;
 
-    const roomCode = generateRoomCode();
-    const playerRef = push(ref(database, 'rooms/' + roomCode + '/players'));
-    const playerId = playerRef.key;
+    const roomCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const playerId = uuidv4();
 
-    await set(playerRef, {
+    const db = getDatabase();
+    set(ref(db, `rooms/${roomCode}/players/${playerId}`), {
       name,
       isHost: true
     });
 
-    navigate('/lobby', { state: { roomCode, playerId } });
+    navigate('/lobby', {
+      state: {
+        roomCode,
+        playerId,
+        isHost: true,
+        name
+      }
+    });
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4 font-sans">
-      <h1 className="text-3xl font-bold text-[#fef1dd] mb-6">Create Game</h1>
+    <div className="flex flex-col items-center justify-center h-screen text-center font-sans">
+      <h1 className="text-3xl font-bold mb-4">Create Game</h1>
       <input
+        className="border p-2 mb-4"
         type="text"
         placeholder="Enter your name"
-        className="mb-6 p-3 rounded-xl w-full max-w-xs text-center"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
       <button
-        onClick={handleStartGame}
-        className="rounded-2xl bg-[#fef1dd] text-xl font-bold text-[#b1b5de] py-4 px-8"
+        className="bg-blue-500 text-white px-4 py-2 rounded"
+        onClick={handleCreateRoom}
       >
-        Start Game
+        Create Game
       </button>
     </div>
   );
-}
+};
+
+export default CreatePage;
