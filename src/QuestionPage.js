@@ -1,64 +1,78 @@
-import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { getDatabase, ref, onValue, set } from "firebase/database";
-import fakerPrompts from "./fakerPrompts";
-import questions from "./questions";
+
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { getDatabase, ref, set, onValue } from 'firebase/database';
+import fakerPrompts from './fakerPrompts';
+import questions from './questions';
 
 function QuestionPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { roomCode, playerId } = location.state || {};
-  const [questionData, setQuestionData] = useState(null);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState('');
+  const [fakerId, setFakerId] = useState(null);
   const [players, setPlayers] = useState([]);
+  const [isHost, setIsHost] = useState(false);
+  const db = getDatabase();
 
   useEffect(() => {
-    const db = getDatabase();
+    if (!roomCode || !playerId) return;
 
-    const qRef = ref(db, `rooms/${roomCode}/currentQuestion`);
     const playersRef = ref(db, `rooms/${roomCode}/players`);
-
-    onValue(qRef, (snapshot) => {
-      const data = snapshot.val();
-      setQuestionData(data);
-    });
-
     onValue(playersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        setPlayers(Object.entries(data).map(([id, val]) => ({ id, ...val })));
+        const playerList = Object.keys(data);
+        setPlayers(playerList);
+        if (playerId === playerList[0]) {
+          setIsHost(true);
+        }
       }
     });
-  }, [roomCode]);
 
-  const isHost = players.find(p => p.id === playerId)?.isHost;
-  const isFaker = questionData?.fakerId === playerId;
+    const gameRef = ref(db, `rooms/${roomCode}/game`);
+    onValue(gameRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setQuestionIndex(data.currentQuestionIndex || 0);
+        setFakerId(data.fakerId || null);
+      }
+    });
+  }, [roomCode, playerId]);
 
   const handleNextQuestion = () => {
-    const db = getDatabase();
-    const newQuestion = questions[Math.floor(Math.random() * questions.length)];
-    const newPrompt = fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)];
-    const randomFaker = players[Math.floor(Math.random() * players.length)];
-
-    const next = {
-      question: newQuestion.question || newQuestion,
-      fakerPrompt: newPrompt,
-      fakerId: randomFaker.id
-    };
-
-    set(ref(db, `rooms/${roomCode}/currentQuestion`), next);
+    const nextIndex = questionIndex + 1;
+    const newFakerId = players[Math.floor(Math.random() * players.length)];
+    const gameRef = ref(db, `rooms/${roomCode}/game`);
+    set(gameRef, {
+      currentQuestionIndex: nextIndex,
+      fakerId: newFakerId,
+    });
   };
 
-  if (!questionData) return <div className="text-center text-white">Loading...</div>;
+  useEffect(() => {
+    if (questionIndex < questions.length) {
+      setCurrentQuestion(questions[questionIndex]);
+    }
+  }, [questionIndex]);
+
+  if (!roomCode || !playerId) {
+    return <div className="text-center mt-10 text-white">Invalid room or player ID</div>;
+  }
+
+  const isFaker = playerId === fakerId;
+  const displayText = isFaker
+    ? fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)]
+    : currentQuestion;
 
   return (
-    <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
-      <h2 className="text-2xl font-bold text-[#f7ecdc] mb-6">Question</h2>
-      <p className="text-xl text-white mb-10 max-w-md">
-        {isFaker ? questionData.fakerPrompt : questionData.question}
-      </p>
+    <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center text-center px-4 font-sans">
+      <h1 className="text-3xl font-bold text-white mb-6">{displayText}</h1>
       {isHost && (
         <button
           onClick={handleNextQuestion}
-          className="bg-[#f7ecdc] text-[#b1b5de] font-bold text-lg px-8 py-3 rounded-xl shadow hover:opacity-90 transition"
+          className="mt-4 bg-[#f7ecdc] text-[#b1b5de] font-bold text-lg px-6 py-3 rounded-xl shadow hover:opacity-90 transition"
         >
           Next Question
         </button>
