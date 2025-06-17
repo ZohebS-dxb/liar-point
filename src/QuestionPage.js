@@ -13,38 +13,37 @@ function QuestionPage() {
   const [fakerId, setFakerId] = useState(null);
 
   useEffect(() => {
-    if (!roomCode || !playerId) return;
+  if (!roomCode || !playerId) return;
+  const db = getDatabase();
 
-    const db = getDatabase();
+  const indexRef = ref(db, `rooms/${roomCode}/questionIndex`);
+  const fakerRef = ref(db, `rooms/${roomCode}/fakerId`);
 
-    const hostRef = ref(db, `rooms/${roomCode}/players/${playerId}/isHost`);
-    onValue(hostRef, (snapshot) => {
-      setIsHost(snapshot.val());
-    });
+  const indexUnsub = onValue(indexRef, (snapshot) => {
+    const index = snapshot.val() || 0;
+    setQuestionIndex(index);
+    setCurrentQuestion(questions[index] || 'No more questions');
+  });
 
-    const questionRef = ref(db, `rooms/${roomCode}/currentQuestion`);
-    onValue(questionRef, (snapshot) => {
-      const index = snapshot.val();
-      if (index !== null && index < questions.length) {
-        setCurrentQuestion(questions[index]);
-      }
-    });
+  const fakerUnsub = onValue(fakerRef, (snapshot) => {
+    const id = snapshot.val();
+    setFakerId(id);
 
-    const playersRef = ref(db, `rooms/${roomCode}/players`);
-    onValue(playersRef, (snapshot) => {
-      const data = snapshot.val() || {};
-      const playerList = Object.entries(data).map(([id, value]) => ({
-        id,
-        ...value,
-      }));
-      setPlayers(playerList);
-    });
+    // Always choose a new prompt if this player is the faker
+    if (id === playerId) {
+      const randomPrompt = fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)];
+      setMyPrompt(randomPrompt);
+    } else {
+      setMyPrompt('');
+    }
+  });
 
-    const fakerRef = ref(db, `rooms/${roomCode}/fakerId`);
-    onValue(fakerRef, (snapshot) => {
-      setFakerId(snapshot.val());
-    });
-  }, [roomCode, playerId]);
+  return () => {
+    indexUnsub();
+    fakerUnsub();
+  };
+}, [roomCode, playerId]);
+
 
   const handleNextQuestion = () => {
     const db = getDatabase();
