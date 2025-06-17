@@ -1,72 +1,74 @@
-
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { database } from "./firebase";
 import { ref, onValue, set } from "firebase/database";
+import { database } from "./firebase";
+import questions from "./questions";
+import fakerPrompts from "./fakerPrompts";
 
 function QuestionPage() {
   const location = useLocation();
   const { roomCode, playerId } = location.state || {};
-  const [questionData, setQuestionData] = useState(null);
-  const [players, setPlayers] = useState([]);
+  const [question, setQuestion] = useState("");
+  const [isHost, setIsHost] = useState(false);
+  const [isFaker, setIsFaker] = useState(false);
 
   useEffect(() => {
-    const questionRef = ref(database, `rooms/${roomCode}/currentQuestion`);
-    const unsub = onValue(questionRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setQuestionData(data);
+    if (!roomCode || !playerId) return;
+
+    const hostRef = ref(database, `rooms/${roomCode}/host`);
+    const fakerRef = ref(database, `rooms/${roomCode}/faker`);
+    const qIndexRef = ref(database, `rooms/${roomCode}/questionIndex`);
+
+    onValue(hostRef, (snapshot) => {
+      setIsHost(snapshot.val() === playerId);
+    });
+
+    onValue(fakerRef, (snapshot) => {
+      setIsFaker(snapshot.val() === playerId);
+    });
+
+    onValue(qIndexRef, (snapshot) => {
+      const index = snapshot.val() || 0;
+      if (index < questions.length) {
+        setQuestion(questions[index]);
+      } else {
+        setQuestion("No more questions!");
       }
     });
+  }, [roomCode, playerId]);
 
-    const playersRef = ref(database, `rooms/${roomCode}/players`);
-    const unsubPlayers = onValue(playersRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setPlayers(Object.entries(data).map(([id, value]) => ({ id, ...value })));
-      }
-    });
+  const handleNext = () => {
+    const qIndexRef = ref(database, `rooms/${roomCode}/questionIndex`);
+    const fakerRef = ref(database, `rooms/${roomCode}/faker`);
 
-    return () => {
-      unsub();
-      unsubPlayers();
-    };
-  }, [roomCode]);
+    onValue(qIndexRef, (snapshot) => {
+      let index = snapshot.val() || 0;
+      const nextIndex = (index + 1) % questions.length;
+      set(qIndexRef, nextIndex);
 
-  const isHost = players.length > 0 && players[0].id === playerId;
-
-  const showNextQuestion = () => {
-    // Generate a new question
-    import("../questions").then(({ questions }) => {
-      import("../fakerPrompts").then(({ fakerPrompts }) => {
-        const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
-        const randomPrompt = fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)];
-        const fakerIndex = Math.floor(Math.random() * players.length);
-        const fakerId = players[fakerIndex].id;
-
-        const newQuestion = {
-          question: randomQuestion.question,
-          fakerPrompt: randomPrompt,
-          fakerId,
-        };
-
-        set(ref(database, `rooms/${roomCode}/currentQuestion`), newQuestion);
-      });
-    });
+      // Randomly assign faker
+      const playersRef = ref(database, `rooms/${roomCode}/players`);
+      onValue(playersRef, (snap) => {
+        const players = snap.val();
+        const keys = Object.keys(players || {});
+        const randomFaker = keys[Math.floor(Math.random() * keys.length)];
+        set(fakerRef, randomFaker);
+      }, { onlyOnce: true });
+    }, { onlyOnce: true });
   };
 
-  if (!questionData) return <div className="p-4 font-sans text-center">Loading...</div>;
-
-  const isFaker = questionData.fakerId === playerId;
-  const displayText = isFaker ? questionData.fakerPrompt : questionData.question;
-
   return (
-    <div className="p-4 font-sans text-center">
-      <h2 className="text-2xl font-bold mb-6">{displayText}</h2>
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center font-sans">
+      <h2 className="text-2xl font-bold mb-4">Question</h2>
+      <p className="text-xl mb-6">
+        {isFaker
+          ? fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)]
+          : question}
+      </p>
       {isHost && (
         <button
-          onClick={showNextQuestion}
-          className="bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600"
+          onClick={handleNext}
+          className="mt-4 px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
         >
           Next Question
         </button>
