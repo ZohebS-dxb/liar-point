@@ -1,9 +1,8 @@
 const questions = [
-  "How many pets do you have?",
-  "What’s your favorite meal of the day?",
-  "If you could live anywhere, where would it be?",
-  "What’s a talent you wish you had?",
-  "What’s your guilty pleasure TV show?"
+  "How many children do you want?",
+  "What’s your ideal weekend activity?",
+  "Which animal would you be in another life?",
+  "What's your favorite snack at the movies?"
 ];
 
 export default questions;
