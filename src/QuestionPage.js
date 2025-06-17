@@ -85,3 +85,5 @@ function QuestionPage() {
     </div>
   );
 }
+
+export default QuestionPage;
