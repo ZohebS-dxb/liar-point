@@ -1,40 +1,49 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { database } from './firebase';
-import { ref, set } from 'firebase/database';
+import { getDatabase, ref, set } from 'firebase/database';
+import { v4 as uuidv4 } from 'uuid';
 import './index.css';
 
 function CreatePage() {
   const [name, setName] = useState('');
   const navigate = useNavigate();
 
-  const handleCreate = () => {
-    if (!name) return;
-    const roomCode = Math.floor(1000 + Math.random() * 9000).toString();
-    set(ref(database, `rooms/${roomCode}/players/${Date.now()}`), {
+  const generateRoomCode = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
+  const handleCreateGame = () => {
+    if (name.trim() === '') return;
+    const roomCode = generateRoomCode();
+    const playerId = uuidv4();
+    const db = getDatabase();
+    set(ref(db, `rooms/${roomCode}/players/${playerId}`), {
       name,
-      isHost: true
+      isHost: true,
+    }).then(() => {
+      navigate('/lobby', { state: { roomCode, playerId, name, isHost: true } });
     });
-    navigate('/lobby', { state: { roomCode, name, isHost: true } });
   };
 
   return (
-    <div className="min-h-screen bg-indigo-900 text-white flex flex-col justify-center items-center font-sans">
-      <h1 className="text-4xl mb-6">Create Game</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-purple-800 text-white p-4">
+      <h1 className="text-4xl font-bold mb-8">Create a Game</h1>
       <input
-        className="mb-4 p-2 rounded text-black"
         type="text"
         placeholder="Enter your name"
+        className="mb-4 px-4 py-2 text-black rounded shadow"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
       <button
-        onClick={handleCreate}
-        className="bg-green-500 px-4 py-2 rounded hover:bg-green-600"
+        onClick={handleCreateGame}
+        className="bg-white text-purple-800 font-bold py-2 px-6 rounded shadow hover:bg-purple-200 transition"
       >
-        Create Room
+        Create Game
       </button>
     </div>
   );
 }
+
 export default CreatePage;

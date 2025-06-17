@@ -1,40 +1,37 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { database } from './firebase';
-import { ref, onValue } from 'firebase/database';
+import { getDatabase, ref, onValue } from 'firebase/database';
+import './index.css';
 
 function RoomLobby() {
   const location = useLocation();
-  const { roomCode, name, isHost } = location.state || {};
+  const { roomCode, playerId, name, isHost } = location.state || {};
   const [players, setPlayers] = useState([]);
 
   useEffect(() => {
-    if (!roomCode) return;
-    const playersRef = ref(database, `rooms/${roomCode}/players`);
-    return onValue(playersRef, (snapshot) => {
+    const db = getDatabase();
+    const playersRef = ref(db, `rooms/${roomCode}/players`);
+    const unsubscribe = onValue(playersRef, (snapshot) => {
       const data = snapshot.val();
-      const playersList = data ? Object.values(data).map(p => p.name) : [];
-      setPlayers(playersList);
+      const playerList = data ? Object.values(data) : [];
+      setPlayers(playerList);
     });
+
+    return () => unsubscribe();
   }, [roomCode]);
 
-  if (!roomCode) return <div className="text-white">Room not found</div>;
-
   return (
-    <div className="min-h-screen bg-indigo-900 text-white flex flex-col items-center justify-center font-sans">
-      <h1 className="text-4xl mb-6">Who's Playing?</h1>
-      <p className="mb-4">Room Code: <strong>{roomCode}</strong></p>
-      <ul className="mb-6">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-purple-800 text-white p-4">
+      <h1 className="text-3xl font-bold mb-4">Who's Playing?</h1>
+      <ul className="mb-4">
         {players.map((player, index) => (
-          <li key={index} className="text-lg">{player}</li>
+          <li key={index} className="text-lg">{player.name}</li>
         ))}
       </ul>
-      {isHost && (
-        <button className="bg-yellow-500 px-4 py-2 rounded hover:bg-yellow-600">
-          Start Game
-        </button>
-      )}
+      <p className="text-sm">Room Code: <strong>{roomCode}</strong></p>
     </div>
   );
 }
+
 export default RoomLobby;
