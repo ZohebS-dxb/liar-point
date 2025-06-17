@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
@@ -20,11 +19,16 @@ function RoomLobby() {
       setPlayers(playerList);
     });
 
+    // Listen to game phase changes
     const phaseRef = ref(db, `rooms/${roomCode}/phase`);
     const phaseUnsub = onValue(phaseRef, (snapshot) => {
       const phase = snapshot.val();
-      if (phase === 'selectgame') {
-        navigate('/selectgame', { state: { roomCode, playerId, name, isHost } });
+      if (phase === 'question') {
+        if (isHost) {
+          navigate('/selectgame', { state: { roomCode, playerId, name, isHost } });
+        } else {
+          navigate('/question', { state: { roomCode, playerId, name, isHost } });
+        }
       }
     });
 
@@ -36,7 +40,7 @@ function RoomLobby() {
 
   const startGame = () => {
     const db = getDatabase();
-    set(ref(db, `rooms/${roomCode}/phase`), 'selectgame');
+    set(ref(db, `rooms/${roomCode}/phase`), 'question');
   };
 
   return (
