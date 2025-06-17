@@ -36,8 +36,8 @@ export default function JoinPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4">
-      <h1 className="text-3xl font-bold text-[#fef1dd] mb-6">Join Game</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4 font-sans">
+      <h1 className="text-3xl font-bold text-[#fef1dd] mb-6">Who's Playing?</h1>
 
       <input
         type="text"
