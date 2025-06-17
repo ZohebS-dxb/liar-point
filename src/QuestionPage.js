@@ -35,12 +35,22 @@ function QuestionPage() {
     });
   }, [roomCode, playerId]);
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     const db = getDatabase();
-    const nextIndex = questionIndex + 1;
-    const newFakerId = `faker-${Math.random().toString(36).substr(2, 9)}`;
-    set(ref(db, `rooms/${roomCode}/questionIndex`), nextIndex);
-    set(ref(db, `rooms/${roomCode}/fakerId`), newFakerId);
+    const playersRef = ref(db, `rooms/${roomCode}/players`);
+
+    onValue(playersRef, (snapshot) => {
+      const players = snapshot.val();
+      const playerIds = players ? Object.keys(players) : [];
+      if (playerIds.length === 0) return;
+
+      const randomIndex = Math.floor(Math.random() * playerIds.length);
+      const selectedFakerId = playerIds[randomIndex];
+
+      const nextIndex = questionIndex + 1;
+      set(ref(db, `rooms/${roomCode}/questionIndex`), nextIndex);
+      set(ref(db, `rooms/${roomCode}/fakerId`), selectedFakerId);
+    }, { onlyOnce: true });
   };
 
   return (
