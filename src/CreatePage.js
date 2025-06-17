@@ -21,12 +21,12 @@ function CreatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-end items-center pb-24 px-4 text-center font-sans">
+    <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
       <h1 className="text-3xl font-bold text-[#f7ecdc] mb-6">Create Game</h1>
       <input
         type="text"
         placeholder="Enter your name"
-        className="mb-4 px-4 py-3 w-full max-w-md text-center text-[#b1b5de] placeholder-[#b1b5de] bg-[#f7ecdc] rounded-xl shadow-md"
+        className="mb-4 px-4 py-3 w-[260px] text-center text-[#b1b5de] placeholder-[#b1b5de] bg-[#f7ecdc] rounded-xl shadow-md"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
