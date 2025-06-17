@@ -5,6 +5,8 @@ import JoinPage from './JoinPage';
 import GamePage from './GamePage';
 import QuestionPage from './QuestionPage';
 import RoomLobby from './RoomLobby';
+import GameSelectPage from './GameSelectPage'; // Add this at the top
+
 
 
 
@@ -17,6 +19,8 @@ function App() {
         <Route path="/game" element={<GamePage />} />
         <Route path="/question" element={<QuestionPage />} />
         <Route path="/lobby" element={<RoomLobby />} />
+        <Route path="/gameselect" element={<GameSelectPage />} />
+
 
       </Routes>
     </Router>
