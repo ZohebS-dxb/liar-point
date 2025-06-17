@@ -56,8 +56,10 @@ function QuestionPage() {
 
       set(questionRef, index);
 
+      // Exclude host from faker selection
+      const nonHostPlayers = players.filter(player => !player.isHost);
       const randomFaker =
-        players[Math.floor(Math.random() * players.length)]?.id || null;
+        nonHostPlayers[Math.floor(Math.random() * nonHostPlayers.length)]?.id || null;
       set(fakerRef, randomFaker);
     }, { onlyOnce: true });
   };
@@ -66,7 +68,7 @@ function QuestionPage() {
 
   return (
     <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
-      {fakerId === playerId ? (
+      {isFaker ? (
         <>
           <img src="/imposter.jpg" alt="Imposter" className="w-64 h-64 mb-4 rounded-full shadow-lg" />
           <h1 className="text-xl font-semibold text-white max-w-md">

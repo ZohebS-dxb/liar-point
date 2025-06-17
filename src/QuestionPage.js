@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { getDatabase, ref, onValue, set, get, child, update, remove } from 'firebase/database';
 import questions from './questions';
 
 function QuestionPage() {
@@ -21,14 +22,6 @@ function QuestionPage() {
       setIsHost(snapshot.val());
     });
 
-    const questionRef = ref(db, `rooms/${roomCode}/currentQuestion`);
-    onValue(questionRef, (snapshot) => {
-      const index = snapshot.val();
-      if (index !== null && index < questions.length) {
-        setCurrentQuestion(questions[index]);
-      }
-    });
-
     const playersRef = ref(db, `rooms/${roomCode}/players`);
     onValue(playersRef, (snapshot) => {
       const data = snapshot.val() || {};
@@ -43,25 +36,44 @@ function QuestionPage() {
     onValue(fakerRef, (snapshot) => {
       setFakerId(snapshot.val());
     });
+
+    const questionRef = ref(db, `rooms/${roomCode}/currentQuestion`);
+    onValue(questionRef, (snapshot) => {
+      const index = snapshot.val();
+      if (index !== null && index < questions.length) {
+        setCurrentQuestion(questions[index]);
+      }
+    });
+
   }, [roomCode, playerId]);
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     const db = getDatabase();
-    const questionRef = ref(db, `rooms/${roomCode}/currentQuestion`);
-    const fakerRef = ref(db, `rooms/${roomCode}/fakerId`);
+    const seenRef = ref(db, 'global/seenQuestions');
+    const snapshot = await get(seenRef);
+    let seenQuestions = snapshot.exists() ? snapshot.val() : [];
 
-    onValue(questionRef, (snapshot) => {
-      let index = snapshot.val() || 0;
-      index = index + 1 < questions.length ? index + 1 : 0;
+    if (seenQuestions.length >= questions.length) {
+      await set(seenRef, []);
+      seenQuestions = [];
+    }
 
-      set(questionRef, index);
+    let nextIndex;
+    const remaining = questions
+      .map((_, i) => i)
+      .filter((i) => !seenQuestions.includes(i));
+    nextIndex = remaining[Math.floor(Math.random() * remaining.length)];
 
-      // Exclude host from faker selection
-      const nonHostPlayers = players.filter(player => !player.isHost);
-      const randomFaker =
-        nonHostPlayers[Math.floor(Math.random() * nonHostPlayers.length)]?.id || null;
-      set(fakerRef, randomFaker);
-    }, { onlyOnce: true });
+    await set(ref(db, `rooms/${roomCode}/currentQuestion`), nextIndex);
+    seenQuestions.push(nextIndex);
+    await set(seenRef, seenQuestions);
+
+    // Choose faker (host cannot be faker)
+    const eligiblePlayers = players.filter(p => !p.isHost);
+    const faker = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
+    if (faker) {
+      await set(ref(db, `rooms/${roomCode}/fakerId`), faker.id);
+    }
   };
 
   const isFaker = playerId === fakerId;
