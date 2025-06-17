@@ -1,1 +1,29 @@
-export const fakerPrompts = ["You"re the Faker. Hold up a number and blend in.", "You are the IMPOSTER. Pick a number. Don’t get caught.", "Faker alert! Show a number like it makes total sense.", "You"ve been chosen. Act cool, hold up a number.", "Imposter time. Pick a number and sell it.", "You"re the only one who doesn’t know the question. Pretend you do.", "Hold up any number of fingers. Make it believable.", "You’re faking it. Stay calm and play along.", "The others have the real question. You don’t.", "Just raise your fingers and act like you belong.", "You"re the Faker. Look natural. Pick a number.", "Play it cool. Show a number, not the truth.", "No clue what’s going on? Perfect. Act like you do.", "It’s your moment. Raise fingers. Don"t raise suspicion.", "Fool them all. Choose a number confidently.", "You"re flying blind. Show a number and fake confidence.", "Make up a number with your fingers. Easy, right?", "You"re the imposter. Smile and raise some fingers.", "Pretend you understood the question. Pick a number.", "Keep calm. Hold up fingers like everyone else.", "You"re undercover. Choose a number that fits in.", "No idea? No problem. Fake it with fingers.", "You"re the odd one out. Look like you"re not.", "Act like the question made sense. Raise fingers.", "The spotlight’s on you. Choose wisely. Be convincing."];
+const fakerPrompts = [
+  "You're the IMPOSTER. Show any random number of fingers from 1 to 10!",
+  "You’re the Faker! Bluff with a number.",
+  "Act natural – fake a number!",
+  "You don’t know the question. Just pick a number!",
+  "No clue what's going on? Perfect. Show some fingers!",
+  "Wing it. Any number from 1 to 10!",
+  "Pretend you understood. Hold up a number!",
+  "Guess time! Pick a number. Hope it works!",
+  "You’re the secret Faker. Pick wisely.",
+  "Look confident and show a number!",
+  "Don’t get caught. Hold up a number!",
+  "Keep a straight face. Any number from 1 to 10!",
+  "Pick a number. Hope they don’t catch you!",
+  "Bluff mode ON. Choose a number!",
+  "Improvise! Show 1–10 fingers.",
+  "You’re the imposter. Choose fast!",
+  "Fake it like you mean it.",
+  "Smile and pick a number!",
+  "Fool them all. Choose a number.",
+  "Act smart – show a number!",
+  "Faker alert! Fingers up – now!",
+  "Don’t panic. Hold up fingers.",
+  "Play cool. Pick a random number.",
+  "All eyes on you. Pick one!",
+  "Quick! Hold up fingers. Act normal."
+];
+
+export default fakerPrompts;
