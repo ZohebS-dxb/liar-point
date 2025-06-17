@@ -19,33 +19,39 @@ function RoomLobby({ roomCode, playerId }) {
       }
     });
 
-    return () => unsub();
-  }, [roomCode]);
+    // Listen for game start
+    const currentQuestionRef = ref(database, `rooms/${roomCode}/currentQuestion`);
+    const unsubQuestion = onValue(currentQuestionRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        navigate("/question", {
+          state: {
+            roomCode,
+            playerId,
+          },
+        });
+      }
+    });
+
+    return () => {
+      unsub();
+      unsubQuestion();
+    };
+  }, [roomCode, playerId, navigate]);
 
   const startGame = () => {
-    // Choose a random question and faker prompt
     const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
     const randomPrompt = fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)];
-
-    // Choose a random player to be the faker
     const fakerIndex = Math.floor(Math.random() * players.length);
     const fakerId = players[fakerIndex].id;
 
     const currentQuestion = {
       question: randomQuestion.question,
       fakerPrompt: randomPrompt,
-      fakerId
+      fakerId,
     };
 
     set(ref(database, `rooms/${roomCode}/currentQuestion`), currentQuestion);
-
-    // Navigate to the question screen
-    navigate("/question", {
-      state: {
-        roomCode,
-        playerId
-      }
-    });
   };
 
   return (

@@ -1,47 +1,78 @@
-import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { database } from './firebase';
-import { ref, onValue } from 'firebase/database';
 
-export default function QuestionPage() {
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { database } from "../firebase";
+import { ref, onValue, set } from "firebase/database";
+
+function QuestionPage() {
   const location = useLocation();
   const { roomCode, playerId } = location.state || {};
-
   const [questionData, setQuestionData] = useState(null);
+  const [players, setPlayers] = useState([]);
 
   useEffect(() => {
-    if (!roomCode) return;
-
-    const questionRef = ref(database, 'rooms/' + roomCode + '/currentQuestion');
-
-    const unsubscribe = onValue(questionRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setQuestionData(snapshot.val());
+    const questionRef = ref(database, `rooms/${roomCode}/currentQuestion`);
+    const unsub = onValue(questionRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setQuestionData(data);
       }
     });
 
-    return () => unsubscribe();
+    const playersRef = ref(database, `rooms/${roomCode}/players`);
+    const unsubPlayers = onValue(playersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setPlayers(Object.entries(data).map(([id, value]) => ({ id, ...value })));
+      }
+    });
+
+    return () => {
+      unsub();
+      unsubPlayers();
+    };
   }, [roomCode]);
 
-  if (!questionData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#b1b5de] text-[#fef1dd] text-2xl">
-        Waiting for question...
-      </div>
-    );
-  }
+  const isHost = players.length > 0 && players[0].id === playerId;
+
+  const showNextQuestion = () => {
+    // Generate a new question
+    import("../questions").then(({ questions }) => {
+      import("../fakerPrompts").then(({ fakerPrompts }) => {
+        const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+        const randomPrompt = fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)];
+        const fakerIndex = Math.floor(Math.random() * players.length);
+        const fakerId = players[fakerIndex].id;
+
+        const newQuestion = {
+          question: randomQuestion.question,
+          fakerPrompt: randomPrompt,
+          fakerId,
+        };
+
+        set(ref(database, `rooms/${roomCode}/currentQuestion`), newQuestion);
+      });
+    });
+  };
+
+  if (!questionData) return <div className="p-4 font-sans text-center">Loading...</div>;
 
   const isFaker = questionData.fakerId === playerId;
   const displayText = isFaker ? questionData.fakerPrompt : questionData.question;
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-[#b1b5de] px-4 text-center">
-      <h1 className="text-3xl font-bold text-[#fef1dd] mb-8">Question</h1>
-      <p className="text-2xl text-[#fef1dd] mb-8">{displayText}</p>
-
-      <p className="text-md text-[#fef1dd] opacity-70">
-        {isFaker ? "You are the faker. Blend in!" : "Answer like you normally would."}
-      </p>
+    <div className="p-4 font-sans text-center">
+      <h2 className="text-2xl font-bold mb-6">{displayText}</h2>
+      {isHost && (
+        <button
+          onClick={showNextQuestion}
+          className="bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600"
+        >
+          Next Question
+        </button>
+      )}
     </div>
   );
 }
+
+export default QuestionPage;
