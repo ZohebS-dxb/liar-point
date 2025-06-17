@@ -1,51 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { getDatabase, ref, onValue } from 'firebase/database';
+import { useLocation } from 'react-router-dom';
+import { database } from './firebase';
+import { ref, onValue } from 'firebase/database';
 
-const RoomLobby = () => {
+function RoomLobby() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { roomCode, playerId, isHost, name } = location.state || {};
-
+  const { roomCode, name, isHost } = location.state || {};
   const [players, setPlayers] = useState([]);
 
   useEffect(() => {
-    if (!roomCode || !playerId || !name) {
-      navigate('/');
-      return;
-    }
-
-    const db = getDatabase();
-    const playersRef = ref(db, `rooms/${roomCode}/players`);
-    onValue(playersRef, (snapshot) => {
-      const data = snapshot.val() || {};
-      const playersArray = Object.values(data);
-      setPlayers(playersArray);
+    if (!roomCode) return;
+    const playersRef = ref(database, `rooms/${roomCode}/players`);
+    return onValue(playersRef, (snapshot) => {
+      const data = snapshot.val();
+      const playersList = data ? Object.values(data).map(p => p.name) : [];
+      setPlayers(playersList);
     });
-  }, [roomCode, playerId, name, navigate]);
+  }, [roomCode]);
+
+  if (!roomCode) return <div className="text-white">Room not found</div>;
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen font-sans">
-      <h1 className="text-3xl font-bold mb-6">Who's Playing?</h1>
+    <div className="min-h-screen bg-indigo-900 text-white flex flex-col items-center justify-center font-sans">
+      <h1 className="text-4xl mb-6">Who's Playing?</h1>
+      <p className="mb-4">Room Code: <strong>{roomCode}</strong></p>
       <ul className="mb-6">
         {players.map((player, index) => (
-          <li key={index} className="text-lg">{player.name}</li>
+          <li key={index} className="text-lg">{player}</li>
         ))}
       </ul>
       {isHost && (
-        <button
-          className="bg-green-600 text-white px-6 py-3 rounded"
-          onClick={() =>
-            navigate('/question', {
-              state: { roomCode, playerId }
-            })
-          }
-        >
+        <button className="bg-yellow-500 px-4 py-2 rounded hover:bg-yellow-600">
           Start Game
         </button>
       )}
     </div>
   );
-};
-
+}
 export default RoomLobby;
