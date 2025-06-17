@@ -50,7 +50,7 @@ export default function RoomLobby() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4 text-center font-sans">
       <h2 className="text-3xl font-bold text-[#fef1dd] mb-8">Room Code: {roomCode}</h2>
 
       <ul className="mb-8 text-[#fef1dd] text-xl">

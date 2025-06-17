@@ -20,14 +20,14 @@ export default function CreatePage() {
 
     await set(playerRef, {
       name,
-      isHost: true // ✅ Mark this player as the host
+      isHost: true
     });
 
     navigate('/lobby', { state: { roomCode, playerId } });
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4 font-sans">
       <h1 className="text-3xl font-bold text-[#fef1dd] mb-6">Create Game</h1>
       <input
         type="text"
