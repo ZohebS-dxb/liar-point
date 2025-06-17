@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { getDatabase, ref, onValue, update } from 'firebase/database';
 
 function RoomLobby() {
   const location = useLocation();
@@ -15,9 +16,7 @@ function RoomLobby() {
     const playersRef = ref(db, `rooms/${roomCode}/players`);
     const unsubscribe = onValue(playersRef, (snapshot) => {
       const data = snapshot.val();
-      const playerList = data
-        ? Object.entries(data).map(([id, player]) => ({ id, ...player }))
-        : [];
+      const playerList = data ? Object.values(data) : [];
       setPlayers(playerList);
     });
 
@@ -26,16 +25,15 @@ function RoomLobby() {
 
   const handleStartGame = () => {
     const db = getDatabase();
+    const roomRef = ref(db, `rooms/${roomCode}`);
+    const fakerIndex = Math.floor(Math.random() * players.length);
 
-    // Set initial question index
-    set(ref(db, `rooms/${roomCode}/questionIndex`), 0);
+    update(roomRef, {
+      currentQuestionIndex: 0,
+      fakerIndex: fakerIndex,
+    });
 
-    // Pick a random player to be the faker
-    const playerIds = players.map((p) => p.id);
-    const randomFaker = playerIds[Math.floor(Math.random() * playerIds.length)];
-    set(ref(db, `rooms/${roomCode}/fakerId`), randomFaker);
-
-    navigate('/question', { state: { roomCode, playerId, isHost } });
+    navigate('/question', { state: { roomCode, playerId } });
   };
 
   return (
