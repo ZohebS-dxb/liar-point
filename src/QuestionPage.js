@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
@@ -5,89 +6,88 @@ import questions from './questions';
 
 function QuestionPage() {
   const location = useLocation();
-  const { roomCode, playerId, isHost } = location.state || {};
-
-  const [questionIndex, setQuestionIndex] = useState(0);
+  const { roomCode, playerId } = location.state || {};
   const [currentQuestion, setCurrentQuestion] = useState('');
+  const [isHost, setIsHost] = useState(false);
+  const [players, setPlayers] = useState([]);
   const [fakerId, setFakerId] = useState(null);
-  const [myPrompt, setMyPrompt] = useState('');
-
-  const fakerPrompts = [
-    "You're the IMPOSTER. Show any random number of fingers from 1 to 10!",
-    "You’re the Faker! Bluff with a number.",
-    "Act natural – fake a number!",
-    "You don’t know the question. Just pick a number!",
-    "No clue what's going on? Perfect. Show some fingers!",
-    "Wing it. Any number from 1 to 10!",
-    "Pretend you understood. Hold up a number!",
-    "Guess time! Pick a number. Hope it works!",
-    "You’re the secret Faker. Pick wisely.",
-    "Look confident and show a number!",
-    "Don’t get caught. Hold up a number!",
-    "Keep a straight face. Any number from 1 to 10!",
-    "Pick a number. Hope they don’t catch you!",
-    "Bluff mode ON. Choose a number!",
-    "Improvise! Show 1–10 fingers.",
-    "You’re the imposter. Choose fast!",
-    "Fake it like you mean it.",
-    "Smile and pick a number!",
-    "Fool them all. Choose a number.",
-    "Act smart – show a number!",
-    "Faker alert! Fingers up – now!",
-    "Don’t panic. Hold up fingers.",
-    "Play cool. Pick a random number.",
-    "All eyes on you. Pick one!",
-    "Quick! Hold up fingers. Act normal."
-  ];
 
   useEffect(() => {
     if (!roomCode || !playerId) return;
+
     const db = getDatabase();
 
-    const indexRef = ref(db, `rooms/${roomCode}/questionIndex`);
-    const fakerRef = ref(db, `rooms/${roomCode}/fakerId`);
-
-    onValue(indexRef, (snapshot) => {
-      const index = snapshot.val() || 0;
-      setQuestionIndex(index);
-      setCurrentQuestion(questions[index] || 'No more questions');
+    const hostRef = ref(db, `rooms/${roomCode}/players/${playerId}/isHost`);
+    onValue(hostRef, (snapshot) => {
+      setIsHost(snapshot.val());
     });
 
-    onValue(fakerRef, (snapshot) => {
-      const id = snapshot.val();
-      setFakerId(id);
-      if (id === playerId) {
-        const randomPrompt = fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)];
-        setMyPrompt(randomPrompt);
+    const questionRef = ref(db, `rooms/${roomCode}/currentQuestion`);
+    onValue(questionRef, (snapshot) => {
+      const index = snapshot.val();
+      if (index !== null && index < questions.length) {
+        setCurrentQuestion(questions[index]);
       }
+    });
+
+    const playersRef = ref(db, `rooms/${roomCode}/players`);
+    onValue(playersRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      const playerList = Object.entries(data).map(([id, value]) => ({
+        id,
+        ...value,
+      }));
+      setPlayers(playerList);
+    });
+
+    const fakerRef = ref(db, `rooms/${roomCode}/fakerId`);
+    onValue(fakerRef, (snapshot) => {
+      setFakerId(snapshot.val());
     });
   }, [roomCode, playerId]);
 
   const handleNextQuestion = () => {
     const db = getDatabase();
-    const nextIndex = questionIndex + 1;
+    const questionRef = ref(db, `rooms/${roomCode}/currentQuestion`);
+    const fakerRef = ref(db, `rooms/${roomCode}/fakerId`);
 
-    // Pick random fakerId from player list
-    const fakerCandidate = Math.random().toString(36).substring(2, 9);
-    set(ref(db, `rooms/${roomCode}/questionIndex`), nextIndex);
-    set(ref(db, `rooms/${roomCode}/fakerId`), fakerCandidate);
+    onValue(questionRef, (snapshot) => {
+      let index = snapshot.val() || 0;
+      index = index + 1 < questions.length ? index + 1 : 0;
+
+      set(questionRef, index);
+
+      // Random faker
+      const randomFaker =
+        players[Math.floor(Math.random() * players.length)]?.id || null;
+      set(fakerRef, randomFaker);
+    }, { onlyOnce: true });
   };
 
-  return (
-    <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
-      <h1 className="text-2xl font-bold text-white mb-6">
-        {fakerId === playerId ? myPrompt : currentQuestion}
-      </h1>
-      {isHost && (
-        <button
-          onClick={handleNextQuestion}
-          className="bg-white text-[#b1b5de] px-6 py-3 rounded-xl shadow font-bold hover:opacity-90 transition"
-        >
-          Next Question
-        </button>
-      )}
-    </div>
-  );
-}
+  const isFaker = playerId === fakerId;
+
+return (
+  <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
+    {fakerId === playerId ? (
+      <>
+        <img src="/imposter.jpg" alt="Imposter" className="w-32 h-32 mb-4 rounded-full shadow-lg" />
+        <h1 className="text-xl font-semibold text-white max-w-md">
+          You are the IMPOSTER. Blend in by raising any number of fingers from 0 to 10. Be prepared to defend your number whatever happens.
+        </h1>
+      </>
+    ) : (
+      <h1 className="text-2xl font-bold text-white mb-6">{currentQuestion}</h1>
+    )}
+    {isHost && (
+      <button
+        onClick={handleNextQuestion}
+        className="bg-white text-[#b1b5de] px-6 py-3 rounded-xl shadow font-bold hover:opacity-90 transition mt-6"
+      >
+        Next Question
+      </button>
+    )}
+  </div>
+);
+
 
 export default QuestionPage;
