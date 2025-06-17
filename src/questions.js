@@ -22,7 +22,7 @@ const questions = [
 "How many hours a day do you spend on your phone (rounded to nearest whole number)?",
 "Rate your dancing skills on a scale of 1 to 10",
 "Hold up the number of fingers for how many different accents you can do",
-"Hold up the number of fingers for how many items on your current "bucket list" are achievable within a year.",
+"Hold up the number of fingers for how many items on your current bucket list are achievable within a year.",
 "Hold up the number of fingers of Himesh Reshammiya song you love.",
 "Hold up the number of fingers for how many hours you have spent on Social Media today",
 "Hold up the number of fingers for how many days you could realistically survive in the jungle",
