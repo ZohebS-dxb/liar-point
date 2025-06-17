@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getDatabase, ref, set } from 'firebase/database';
@@ -10,7 +9,10 @@ function GameSelectPage() {
 
   const handleGameSelect = () => {
     const db = getDatabase();
-    set(ref(db, `rooms/${roomCode}/phase`), 'question');
+
+    // ✅ Set phase to 'game' so everyone moves forward
+    set(ref(db, `rooms/${roomCode}/phase`), 'game');
+
     navigate('/question', { state: { roomCode, playerId, isHost, name } });
   };
 

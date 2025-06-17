@@ -13,6 +13,7 @@ function RoomLobby() {
     if (!roomCode || !playerId) return;
 
     const db = getDatabase();
+
     const playersRef = ref(db, `rooms/${roomCode}/players`);
     const phaseRef = ref(db, `rooms/${roomCode}/phase`);
 
@@ -26,12 +27,10 @@ function RoomLobby() {
       const currentPhase = snapshot.val();
       setPhase(currentPhase);
 
-      // host goes to selectgame screen
       if (currentPhase === 'question' && isHost) {
         navigate('/selectgame', { state: { roomCode, playerId, name, isHost } });
       }
 
-      // all players go to question screen when phase becomes "game"
       if (currentPhase === 'game') {
         navigate('/question', { state: { roomCode, playerId, name, isHost } });
       }
@@ -48,6 +47,7 @@ function RoomLobby() {
     set(ref(db, `rooms/${roomCode}/phase`), 'question');
   };
 
+  // SHOW MESSAGE TO NON-HOST DURING PHASE 'question'
   if (phase === 'question' && !isHost) {
     return (
       <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
@@ -56,6 +56,7 @@ function RoomLobby() {
     );
   }
 
+  // DEFAULT LOBBY SCREEN
   return (
     <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
       <h1 className="text-3xl font-bold text-[#f7ecdc] mb-6">Who's Playing?</h1>
