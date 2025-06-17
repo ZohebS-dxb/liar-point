@@ -7,34 +7,35 @@ function RoomLobby() {
   const navigate = useNavigate();
   const { roomCode, playerId, name, isHost } = location.state || {};
   const [players, setPlayers] = useState([]);
+  const [phase, setPhase] = useState('lobby'); // default phase
 
   useEffect(() => {
     if (!roomCode || !playerId) return;
 
     const db = getDatabase();
     const playersRef = ref(db, `rooms/${roomCode}/players`);
-    const unsubscribe = onValue(playersRef, (snapshot) => {
+    const phaseRef = ref(db, `rooms/${roomCode}/phase`);
+
+    const unsubscribePlayers = onValue(playersRef, (snapshot) => {
       const data = snapshot.val();
       const playerList = data ? Object.values(data) : [];
       setPlayers(playerList);
     });
 
-    // Listen to game phase changes
-    const phaseRef = ref(db, `rooms/${roomCode}/phase`);
-    const phaseUnsub = onValue(phaseRef, (snapshot) => {
-      const phase = snapshot.val();
-      if (phase === 'question') {
+    const unsubscribePhase = onValue(phaseRef, (snapshot) => {
+      const currentPhase = snapshot.val();
+      setPhase(currentPhase);
+
+      if (currentPhase === 'question') {
         if (isHost) {
           navigate('/selectgame', { state: { roomCode, playerId, name, isHost } });
-        } else {
-          navigate('/question', { state: { roomCode, playerId, name, isHost } });
         }
       }
     });
 
     return () => {
-      unsubscribe();
-      phaseUnsub();
+      unsubscribePlayers();
+      unsubscribePhase();
     };
   }, [roomCode, playerId, name, isHost, navigate]);
 
@@ -42,6 +43,14 @@ function RoomLobby() {
     const db = getDatabase();
     set(ref(db, `rooms/${roomCode}/phase`), 'question');
   };
+
+  if (phase === 'question' && !isHost) {
+    return (
+      <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
+        <h1 className="text-2xl text-white font-bold">Host is choosing a game...</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
