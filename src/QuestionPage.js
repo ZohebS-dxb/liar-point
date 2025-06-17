@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { database } from "../firebase";
+import { database } from "./firebase";
 import { ref, onValue, set } from "firebase/database";
 
 function QuestionPage() {

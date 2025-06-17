@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { database } from "../firebase";
+import { database } from "./firebase";
 import { ref, onValue, set } from "firebase/database";
 import { fakerPrompts } from "../fakerPrompts";
 import { questions } from "../questions";
