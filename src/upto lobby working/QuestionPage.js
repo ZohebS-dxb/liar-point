@@ -1,64 +1,57 @@
-import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { getDatabase, ref, onValue, set } from "firebase/database";
-import fakerPrompts from "./fakerPrompts";
-import questions from "./questions";
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { getDatabase, ref, onValue, set } from 'firebase/database';
+import questions from './questions';
+import fakerPrompts from './fakerPrompts';
 
 function QuestionPage() {
   const location = useLocation();
-  const { roomCode, playerId } = location.state || {};
-  const [questionData, setQuestionData] = useState(null);
-  const [players, setPlayers] = useState([]);
+  const { roomCode, playerId, isHost } = location.state || {};
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState('');
+  const [fakerId, setFakerId] = useState(null);
+  const [myPrompt, setMyPrompt] = useState('');
 
   useEffect(() => {
+    if (!roomCode || !playerId) return;
     const db = getDatabase();
 
-    const qRef = ref(db, `rooms/${roomCode}/currentQuestion`);
-    const playersRef = ref(db, `rooms/${roomCode}/players`);
+    const indexRef = ref(db, `rooms/${roomCode}/questionIndex`);
+    const fakerRef = ref(db, `rooms/${roomCode}/fakerId`);
 
-    onValue(qRef, (snapshot) => {
-      const data = snapshot.val();
-      setQuestionData(data);
+    onValue(indexRef, (snapshot) => {
+      const index = snapshot.val() || 0;
+      setQuestionIndex(index);
+      setCurrentQuestion(questions[index] || 'No more questions');
     });
 
-    onValue(playersRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setPlayers(Object.entries(data).map(([id, val]) => ({ id, ...val })));
+    onValue(fakerRef, (snapshot) => {
+      const id = snapshot.val();
+      setFakerId(id);
+      if (id === playerId) {
+        const randomPrompt = fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)];
+        setMyPrompt(randomPrompt);
       }
     });
-  }, [roomCode]);
-
-  const isHost = players.find(p => p.id === playerId)?.isHost;
-  const isFaker = questionData?.fakerId === playerId;
+  }, [roomCode, playerId]);
 
   const handleNextQuestion = () => {
     const db = getDatabase();
-    const newQuestion = questions[Math.floor(Math.random() * questions.length)];
-    const newPrompt = fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)];
-    const randomFaker = players[Math.floor(Math.random() * players.length)];
-
-    const next = {
-      question: newQuestion.question || newQuestion,
-      fakerPrompt: newPrompt,
-      fakerId: randomFaker.id
-    };
-
-    set(ref(db, `rooms/${roomCode}/currentQuestion`), next);
+    const nextIndex = questionIndex + 1;
+    const newFakerId = `faker-${Math.random().toString(36).substr(2, 9)}`;
+    set(ref(db, `rooms/${roomCode}/questionIndex`), nextIndex);
+    set(ref(db, `rooms/${roomCode}/fakerId`), newFakerId);
   };
-
-  if (!questionData) return <div className="text-center text-white">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
-      <h2 className="text-2xl font-bold text-[#f7ecdc] mb-6">Question</h2>
-      <p className="text-xl text-white mb-10 max-w-md">
-        {isFaker ? questionData.fakerPrompt : questionData.question}
-      </p>
+      <h1 className="text-2xl font-bold text-white mb-6">
+        {fakerId === playerId ? myPrompt : currentQuestion}
+      </h1>
       {isHost && (
         <button
           onClick={handleNextQuestion}
-          className="bg-[#f7ecdc] text-[#b1b5de] font-bold text-lg px-8 py-3 rounded-xl shadow hover:opacity-90 transition"
+          className="bg-white text-[#b1b5de] px-6 py-3 rounded-xl shadow font-bold hover:opacity-90 transition"
         >
           Next Question
         </button>
