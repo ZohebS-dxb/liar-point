@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getDatabase, ref, onValue, update } from 'firebase/database';
@@ -26,14 +25,15 @@ function RoomLobby() {
   const handleStartGame = () => {
     const db = getDatabase();
     const roomRef = ref(db, `rooms/${roomCode}`);
-    const fakerIndex = Math.floor(Math.random() * players.length);
 
+    // Set the initial question and no faker yet
     update(roomRef, {
       currentQuestionIndex: 0,
-      fakerIndex: fakerIndex,
+      fakerId: null,
+      currentQuestion: "Ready to play?",
     });
 
-    navigate('/question', { state: { roomCode, playerId } });
+    navigate('/question', { state: { roomCode, playerId, isHost } });
   };
 
   return (

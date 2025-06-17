@@ -1,80 +1,67 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
-import questions from './questions';
 
 function QuestionPage() {
   const location = useLocation();
-  const { roomCode, playerId } = location.state || {};
-  const [currentQuestion, setCurrentQuestion] = useState('');
-  const [isHost, setIsHost] = useState(false);
-  const [players, setPlayers] = useState([]);
+  const { roomCode, playerId, isHost } = location.state || {};
+  const [question, setQuestion] = useState('');
+  const [isFaker, setIsFaker] = useState(false);
   const [fakerId, setFakerId] = useState(null);
 
   useEffect(() => {
     if (!roomCode || !playerId) return;
-
     const db = getDatabase();
 
-    const hostRef = ref(db, `rooms/${roomCode}/players/${playerId}/isHost`);
-    onValue(hostRef, (snapshot) => {
-      setIsHost(snapshot.val());
-    });
-
     const questionRef = ref(db, `rooms/${roomCode}/currentQuestion`);
-    onValue(questionRef, (snapshot) => {
-      const index = snapshot.val();
-      if (index !== null && index < questions.length) {
-        setCurrentQuestion(questions[index]);
-      }
-    });
-
-    const playersRef = ref(db, `rooms/${roomCode}/players`);
-    onValue(playersRef, (snapshot) => {
-      const data = snapshot.val() || {};
-      const playerList = Object.entries(data).map(([id, value]) => ({
-        id,
-        ...value,
-      }));
-      setPlayers(playerList);
-    });
-
     const fakerRef = ref(db, `rooms/${roomCode}/fakerId`);
+
+    onValue(questionRef, (snapshot) => {
+      setQuestion(snapshot.val() || '');
+    });
+
     onValue(fakerRef, (snapshot) => {
-      setFakerId(snapshot.val());
+      const fid = snapshot.val();
+      setFakerId(fid);
+      setIsFaker(fid === playerId);
     });
   }, [roomCode, playerId]);
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     const db = getDatabase();
+    const questionsRef = ref(db, `rooms/${roomCode}/questions`);
+    const fakerIdRef = ref(db, `rooms/${roomCode}/fakerId`);
     const questionRef = ref(db, `rooms/${roomCode}/currentQuestion`);
-    const fakerRef = ref(db, `rooms/${roomCode}/fakerId`);
+    const playersRef = ref(db, `rooms/${roomCode}/players`);
 
-    onValue(questionRef, (snapshot) => {
-      let index = snapshot.val() || 0;
-      index = index + 1 < questions.length ? index + 1 : 0;
+    onValue(questionsRef, (snapshot) => {
+      const allQs = snapshot.val() || [];
+      const remainingQs = allQs.filter((q) => q !== question);
+      const nextQ = remainingQs[0] || 'Game Over!';
+      set(questionRef, nextQ);
 
-      set(questionRef, index);
-
-      // Random faker
-      const randomFaker =
-        players[Math.floor(Math.random() * players.length)]?.id || null;
-      set(fakerRef, randomFaker);
+      // Pick a random faker
+      onValue(playersRef, (snap) => {
+        const players = snap.val() || {};
+        const keys = Object.keys(players);
+        const randomIndex = Math.floor(Math.random() * keys.length);
+        const fakerPlayerId = keys[randomIndex];
+        set(fakerIdRef, fakerPlayerId);
+      }, { onlyOnce: true });
     }, { onlyOnce: true });
   };
 
-  const isFaker = playerId === fakerId;
-
   return (
-    <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
-      <h1 className="text-2xl font-bold text-white mb-6">
-        {isFaker ? 'FAKER' : currentQuestion}
-      </h1>
+    <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center text-center font-sans p-4">
+      <h1 className="text-2xl text-white font-bold mb-4">Your Prompt</h1>
+      <div className="bg-white text-[#b1b5de] text-xl font-semibold px-6 py-4 rounded-xl shadow-md max-w-sm">
+        {question === 'Ready to play?' ? question : (isFaker ? 'FAKER — Hold random fingers 1-10' : question)}
+      </div>
+
       {isHost && (
         <button
           onClick={handleNextQuestion}
-          className="mt-4 bg-[#f7ecdc] text-[#b1b5de] font-bold text-lg px-8 py-3 rounded-xl shadow hover:opacity-90 transition"
+          className="mt-6 bg-white text-[#b1b5de] font-bold text-lg px-6 py-2 rounded-lg shadow hover:opacity-90 transition"
         >
           Next Question
         </button>
