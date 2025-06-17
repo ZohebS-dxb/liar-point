@@ -1,72 +1,69 @@
-import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { database } from './firebase';
-import { ref, onValue, set } from 'firebase/database';
 
-export default function RoomLobby() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { roomCode, playerId } = location.state || {};
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { database } from "../firebase";
+import { ref, onValue, set } from "firebase/database";
+import { fakerPrompts } from "../fakerPrompts";
+import { questions } from "../questions";
 
+function RoomLobby({ roomCode, playerId }) {
   const [players, setPlayers] = useState([]);
-  const [isHost, setIsHost] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!roomCode || !playerId) return;
-
-    const playersRef = ref(database, 'rooms/' + roomCode + '/players');
-
-    const unsubscribe = onValue(playersRef, (snapshot) => {
-      const data = snapshot.val() || {};
-      const playerList = Object.entries(data).map(([id, info]) => ({
-        id,
-        name: info.name,
-        isHost: info.isHost || false
-      }));
-      setPlayers(playerList);
-
-      const currentPlayer = playerList.find((p) => p.id === playerId);
-      setIsHost(currentPlayer?.isHost === true);
+    const playersRef = ref(database, `rooms/${roomCode}/players`);
+    const unsub = onValue(playersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setPlayers(Object.entries(data).map(([id, value]) => ({ id, ...value })));
+      }
     });
 
-    return () => unsubscribe();
-  }, [roomCode, playerId]);
+    return () => unsub();
+  }, [roomCode]);
 
-  const handleNextQuestion = async () => {
+  const startGame = () => {
+    // Choose a random question and faker prompt
+    const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+    const randomPrompt = fakerPrompts[Math.floor(Math.random() * fakerPrompts.length)];
+
+    // Choose a random player to be the faker
     const fakerIndex = Math.floor(Math.random() * players.length);
-    const fakerId = players[fakerIndex]?.id;
+    const fakerId = players[fakerIndex].id;
 
-    const sampleQuestion = {
-      question: "How many hours do you sleep?",
-      fakerPrompt: "How many apps do you use daily?",
-      fakerId,
-      timestamp: Date.now()
+    const currentQuestion = {
+      question: randomQuestion.question,
+      fakerPrompt: randomPrompt,
+      fakerId
     };
 
-    const questionRef = ref(database, 'rooms/' + roomCode + '/currentQuestion');
-    await set(questionRef, sampleQuestion);
+    set(ref(database, `rooms/${roomCode}/currentQuestion`), currentQuestion);
 
-    navigate('/question', { state: { roomCode, playerId } });
+    // Navigate to the question screen
+    navigate("/question", {
+      state: {
+        roomCode,
+        playerId
+      }
+    });
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#b1b5de] px-4 text-center font-sans">
-      <h2 className="text-3xl font-bold text-[#fef1dd] mb-8">Room Code: {roomCode}</h2>
-
-      <ul className="mb-8 text-[#fef1dd] text-xl">
+    <div className="p-4 font-sans text-center">
+      <h2 className="text-2xl font-bold mb-4">Who's Playing?</h2>
+      <ul className="mb-6">
         {players.map((player) => (
           <li key={player.id}>{player.name}</li>
         ))}
       </ul>
-
-      {isHost && (
-        <button
-          onClick={handleNextQuestion}
-          className="rounded-2xl bg-[#fef1dd] text-xl font-bold text-[#b1b5de] py-4 px-8"
-        >
-          Next Question
-        </button>
-      )}
+      <button
+        onClick={startGame}
+        className="bg-green-500 text-white px-4 py-2 rounded-xl hover:bg-green-600"
+      >
+        Start Game
+      </button>
     </div>
   );
 }
+
+export default RoomLobby;
