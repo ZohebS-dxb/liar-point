@@ -12,7 +12,7 @@ function RoomLobby() {
     if (!roomCode || !playerId) return;
 
     const db = getDatabase();
-    const playersRef = ref(db, `rooms/${roomCode}/players`);
+    const playersRef = ref(db, rooms/${roomCode}/players);
     const unsubscribe = onValue(playersRef, (snapshot) => {
       const data = snapshot.val();
       const playerList = data ? Object.values(data) : [];
@@ -24,16 +24,15 @@ function RoomLobby() {
 
   const handleStartGame = () => {
     const db = getDatabase();
-    const roomRef = ref(db, `rooms/${roomCode}`);
+    const roomRef = ref(db, rooms/${roomCode});
+    const fakerIndex = Math.floor(Math.random() * players.length);
 
-    // Set the initial question and no faker yet
     update(roomRef, {
       currentQuestionIndex: 0,
-      fakerId: null,
-      currentQuestion: "Ready to play?",
+      fakerIndex: fakerIndex,
     });
 
-    navigate('/question', { state: { roomCode, playerId, isHost } });
+    navigate('/question', { state: { roomCode, playerId } });
   };
 
   return (
