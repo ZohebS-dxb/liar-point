@@ -68,7 +68,7 @@ function QuestionPage() {
     <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
       {fakerId === playerId ? (
         <>
-          <img src="/imposter.jpg" alt="Imposter" className="w-32 h-32 mb-4 rounded-full shadow-lg" />
+          <img src="/imposter.jpg" alt="Imposter" className="w-64 h-64 mb-4 rounded-full shadow-lg" />
           <h1 className="text-xl font-semibold text-white max-w-md">
             You are the IMPOSTER. Blend in by raising any number of fingers from 0 to 10. Be prepared to defend your number whatever happens.
           </h1>
