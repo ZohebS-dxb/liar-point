@@ -106,7 +106,6 @@ function QuestionPage() {
 export default QuestionPage;
 
 // ✅ Reusable helper for managing seen questions by game
-import { ref, set, onValue, getDatabase } from "firebase/database";
 
 export function getGameKey(repoName) {
   switch (repoName) {
