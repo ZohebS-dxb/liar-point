@@ -8,33 +8,34 @@ function GameSelectPage() {
   const navigate = useNavigate();
   const { roomCode, playerId, isHost, name } = location.state || {};
 
-  if (!roomCode || !playerId || !isHost) {
-    return (
-      <div className="min-h-screen bg-[#b1b5de] flex items-center justify-center text-white text-lg font-sans">
-        Loading or unauthorized access...
-      </div>
-    );
-  }
-
-  const handleGameSelect = (gameKey) => {
+  const handleGameSelect = () => {
     const db = getDatabase();
-    set(ref(db, `rooms/${roomCode}/selectedGame`), gameKey);
     set(ref(db, `rooms/${roomCode}/phase`), 'question');
     navigate('/question', { state: { roomCode, playerId, isHost, name } });
   };
 
+  const gameTitles = [
+    'Number Picker',
+    'Point it Out',
+    'Who\'s the Imposter',
+    'Raise Your Hand',
+    'Who\'s the Celebrity'
+  ];
+
   return (
     <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center text-center px-4 font-sans">
       <h1 className="text-3xl font-bold text-[#f7ecdc] mb-6">Choose a Game</h1>
-      {['numberPicker', 'pointItOut', 'whosTheImposter', 'raiseYourHand', 'whosTheCelebrity'].map((game) => (
-        <button
-          key={game}
-          onClick={() => handleGameSelect(game)}
-          className="bg-[#f7ecdc] text-[#b1b5de] font-bold text-lg px-8 py-6 rounded-xl shadow hover:opacity-90 transition m-2 w-64"
-        >
-          {game.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-        </button>
-      ))}
+      <div className="space-y-4 w-full max-w-xs">
+        {gameTitles.map((title, idx) => (
+          <button
+            key={idx}
+            onClick={handleGameSelect}
+            className="w-full bg-[#f7ecdc] text-[#b1b5de] font-bold text-lg px-8 py-6 rounded-xl shadow hover:opacity-90 transition"
+          >
+            {title}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
