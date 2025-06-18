@@ -85,7 +85,7 @@ function QuestionPage() {
         <>
           <img src="/imposter.jpg" alt="Imposter" className="w-64 h-64 mb-4 rounded-full shadow-lg" />
           <h1 className="text-xl font-semibold text-white max-w-md">
-            You’re the IMPOSTER. Everyone else knows what to point at — you don’t. Pick someone. Act confident. Blend in or get called out..
+            You’re the IMPOSTER. Everyone else knows who to point at — you don’t. Pick someone. Act confident. Blend in or get called out..
           </h1>
         </>
       ) : (
