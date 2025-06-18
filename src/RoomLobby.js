@@ -7,38 +7,30 @@ function RoomLobby() {
   const navigate = useNavigate();
   const { roomCode, playerId, name, isHost } = location.state || {};
   const [players, setPlayers] = useState([]);
-  const [phase, setPhase] = useState('lobby');
 
   useEffect(() => {
     if (!roomCode || !playerId) return;
 
     const db = getDatabase();
-
     const playersRef = ref(db, `rooms/${roomCode}/players`);
-    const phaseRef = ref(db, `rooms/${roomCode}/phase`);
-
-    const unsubscribePlayers = onValue(playersRef, (snapshot) => {
+    const unsubscribe = onValue(playersRef, (snapshot) => {
       const data = snapshot.val();
       const playerList = data ? Object.values(data) : [];
       setPlayers(playerList);
     });
 
-    const unsubscribePhase = onValue(phaseRef, (snapshot) => {
-      const currentPhase = snapshot.val();
-      setPhase(currentPhase);
-
-      if (currentPhase === 'question' && isHost) {
-        navigate('/selectgame', { state: { roomCode, playerId, name, isHost } });
-      }
-
-      if (currentPhase === 'game') {
+    // Listen to game phase changes
+    const phaseRef = ref(db, `rooms/${roomCode}/phase`);
+    const phaseUnsub = onValue(phaseRef, (snapshot) => {
+      const phase = snapshot.val();
+      if (phase === 'question') {
         navigate('/question', { state: { roomCode, playerId, name, isHost } });
       }
     });
 
     return () => {
-      unsubscribePlayers();
-      unsubscribePhase();
+      unsubscribe();
+      phaseUnsub();
     };
   }, [roomCode, playerId, name, isHost, navigate]);
 
@@ -47,16 +39,6 @@ function RoomLobby() {
     set(ref(db, `rooms/${roomCode}/phase`), 'question');
   };
 
-  // SHOW MESSAGE TO NON-HOST DURING PHASE 'question'
-  if (phase === 'question' && !isHost) {
-    return (
-      <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
-        <h1 className="text-2xl text-white font-bold">Host is choosing a game...</h1>
-      </div>
-    );
-  }
-
-  // DEFAULT LOBBY SCREEN
   return (
     <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
       <h1 className="text-3xl font-bold text-[#f7ecdc] mb-6">Who's Playing?</h1>
