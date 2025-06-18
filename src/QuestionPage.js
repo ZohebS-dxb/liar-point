@@ -49,7 +49,7 @@ function QuestionPage() {
 
   const handleNextQuestion = async () => {
     const db = getDatabase();
-    const seenRef = ref(db, 'global/seenQuestions');
+    const seenRef = ref(db, 'numberPicker/seenQuestions');
     const snapshot = await get(seenRef);
     let seenQuestions = snapshot.exists() ? snapshot.val() : [];
 
