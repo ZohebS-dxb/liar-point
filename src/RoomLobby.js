@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { getDatabase, ref, onValue } from 'firebase/database';
 
 function RoomLobby() {
   const location = useLocation();
@@ -24,8 +24,10 @@ function RoomLobby() {
     const phaseRef = ref(db, `rooms/${roomCode}/phase`);
     const phaseUnsub = onValue(phaseRef, (snapshot) => {
       const phase = snapshot.val();
-      if (phase === 'selectGame' && isHost) {
+      if (phase === 'gameSelect' && isHost) {
         navigate('/gameselect', { state: { roomCode, playerId, name, isHost } });
+      } else if (phase === 'gameSelect' && !isHost) {
+        navigate('/waiting', { state: { roomCode, playerId, name, isHost } });
       } else if (phase === 'question') {
         navigate('/question', { state: { roomCode, playerId, name, isHost } });
       }
@@ -37,11 +39,6 @@ function RoomLobby() {
     };
   }, [roomCode, playerId, name, isHost, navigate]);
 
-  const startGame = () => {
-    const db = getDatabase();
-    set(ref(db, `rooms/${roomCode}/phase`), 'selectGame');
-  };
-
   return (
     <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center px-4 text-center font-sans">
       <h1 className="text-3xl font-bold text-[#f7ecdc] mb-6">Who's Playing?</h1>
@@ -52,12 +49,7 @@ function RoomLobby() {
       </ul>
       <p className="text-[#f7ecdc] mb-2">Room Code: <strong>{roomCode}</strong></p>
       {isHost && (
-        <button
-          onClick={startGame}
-          className="mt-4 bg-[#f7ecdc] text-[#b1b5de] font-bold text-lg px-8 py-3 rounded-xl shadow hover:opacity-90 transition"
-        >
-          Start Game
-        </button>
+        <p className="text-[#f7ecdc] mt-4">Waiting for you to select a game...</p>
       )}
     </div>
   );
