@@ -1,27 +1,20 @@
-import React, { useEffect, useState } from 'react';
+
+import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getDatabase, ref, set, onValue } from 'firebase/database';
+import { getDatabase, ref, set } from 'firebase/database';
 
 function GameSelectPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { roomCode, playerId, isHost, name } = location.state || {};
-  const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    const db = getDatabase();
-    const phaseRef = ref(db, `rooms/${roomCode}/phase`);
-    onValue(phaseRef, (snapshot) => {
-      const phase = snapshot.val();
-      if (phase === 'question') {
-        navigate('/question', { state: { roomCode, playerId, isHost, name } });
-      }
-    });
-
-    if (isHost) {
-      setReady(true);
-    }
-  }, [roomCode, playerId, isHost, name, navigate]);
+  if (!roomCode || !playerId || !isHost) {
+    return (
+      <div className="min-h-screen bg-[#b1b5de] flex items-center justify-center text-white text-lg font-sans">
+        Loading or unauthorized access...
+      </div>
+    );
+  }
 
   const handleGameSelect = (gameKey) => {
     const db = getDatabase();
@@ -29,13 +22,6 @@ function GameSelectPage() {
     set(ref(db, `rooms/${roomCode}/phase`), 'question');
     navigate('/question', { state: { roomCode, playerId, isHost, name } });
   };
-
-  if (!ready && isHost) return <div className="text-white">Loading...</div>;
-  if (!isHost) return (
-    <div className="min-h-screen bg-[#b1b5de] flex justify-center items-center text-center px-4 font-sans text-white">
-      Host is choosing a game...
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-[#b1b5de] flex flex-col justify-center items-center text-center px-4 font-sans">
