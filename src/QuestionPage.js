@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getDatabase, ref, onValue, set, get, child, update, remove } from 'firebase/database';
@@ -49,7 +48,10 @@ function QuestionPage() {
 
   const handleNextQuestion = async () => {
     const db = getDatabase();
-    const seenRef = ref(db, 'numberPicker/seenQuestions');
+    const repoName = "liar-point"; // ← Change per repo
+    const gameKey = getGameKey(repoName);
+    const seenRef = ref(db, gameKey);
+
     const snapshot = await get(seenRef);
     let seenQuestions = snapshot.exists() ? snapshot.val() : [];
 
@@ -58,17 +60,16 @@ function QuestionPage() {
       seenQuestions = [];
     }
 
-    let nextIndex;
     const remaining = questions
       .map((_, i) => i)
       .filter((i) => !seenQuestions.includes(i));
-    nextIndex = remaining[Math.floor(Math.random() * remaining.length)];
+
+    const nextIndex = remaining[Math.floor(Math.random() * remaining.length)];
 
     await set(ref(db, `rooms/${roomCode}/currentQuestion`), nextIndex);
     seenQuestions.push(nextIndex);
-    await set(seenRef, seenQuestions);
+    await saveSeenQuestions(repoName, seenQuestions); // 🔥 Save updated list here
 
-    // Choose faker (host cannot be faker)
     const eligiblePlayers = players.filter(p => !p.isHost);
     const faker = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
     if (faker) {
@@ -103,3 +104,41 @@ function QuestionPage() {
 }
 
 export default QuestionPage;
+
+// ✅ Reusable helper for managing seen questions by game
+import { ref, set, onValue, getDatabase } from "firebase/database";
+
+export function getGameKey(repoName) {
+  switch (repoName) {
+    case "liar-1":
+      return "SeenQuestionsNumbers";
+    case "liar-point":
+      return "SeenQuestionsPoint";
+    case "liar-celebrities":
+      return "SeenQuestionsCelebrities";
+    case "liar-hand":
+      return "SeenQuestionsHand";
+    case "liar-imposter":
+      return "SeenQuestionsImposter";
+    default:
+      return "SeenQuestionsUnknown";
+  }
+}
+
+export function saveSeenQuestions(repoName, seenQuestionsArray) {
+  const db = getDatabase();
+  const gameKey = getGameKey(repoName);
+  set(ref(db, gameKey), seenQuestionsArray);
+}
+
+export function listenToSeenQuestions(repoName, callback) {
+  const db = getDatabase();
+  const gameKey = getGameKey(repoName);
+  const seenRef = ref(db, gameKey);
+
+  onValue(seenRef, (snapshot) => {
+    const data = snapshot.val();
+    const seen = Array.isArray(data) ? data : Object.values(data || {});
+    callback(seen);
+  });
+}
